@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebTorrent Client</title>
+  </head>
+  <body>
+    <h1>WebTorrent Client</h1>
+    <input type="text" id="magnetURI" placeholder="Enter magnet URI" />
+    <button id="addTorrent">Add Torrent</button>
+    <ul id="torrents"></ul>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      document.getElementById("addTorrent").addEventListener("click", () => {
+        const magnetURI = document.getElementById("magnetURI").value;
+        socket.emit("addTorrent", magnetURI);
+      });
+
+      socket.on("progress", (data) => {
+        const { infoHash, progress, bytes } = data;
+        let torrentElement = document.getElementById(infoHash);
+        if (!torrentElement) {
+          torrentElement = document.createElement("li");
+          torrentElement.id = infoHash;
+          document.getElementById("torrents").appendChild(torrentElement);
+        }
+        torrentElement.textContent = `Progress: ${progress}%, Downloaded: ${bytes} bytes`;
+      });
+
+      socket.on("downloadComplete", (data) => {
+        const { infoHash } = data;
+        let torrentElement = document.getElementById(infoHash);
+        if (torrentElement) {
+          torrentElement.textContent = "Download complete!";
+        }
+      });
+
+      socket.on("error", (data) => {
+        const { infoHash, err } = data;
+        let torrentElement = document.getElementById(infoHash);
+        if (torrentElement) {
+          torrentElement.textContent = `Error: ${err.message}`;
+        }
+      });
+    </script>
+  </body>
+</html>
